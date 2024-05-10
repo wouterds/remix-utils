@@ -56,7 +56,7 @@ export type ScriptDescriptor = {
 	 * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script#attr-type
 	 */
 	type?: ScriptType;
-};
+} & Record<string, unknown>;
 
 export type ExternalScriptsFunction<Loader = unknown> = (
 	args: HandleConventionArguments<Loader>,
@@ -168,6 +168,7 @@ export function ExternalScript({
 	referrerPolicy,
 	noModule,
 	nonce,
+	...rest
 }: ScriptDescriptor) {
 	let isHydrated = useHydrated();
 	let startsHydrated = React.useRef(isHydrated);
@@ -178,7 +179,7 @@ export function ExternalScript({
 		let $script = document.createElement("script");
 		$script.src = src;
 
-		let attributes = {
+		let attributes: Record<string, unknown> = {
 			async,
 			defer,
 			crossOrigin,
@@ -187,10 +188,11 @@ export function ExternalScript({
 			referrerPolicy,
 			noModule,
 			nonce,
+			...rest,
 		};
 
 		for (let [key, value] of Object.entries(attributes)) {
-			if (value) $script.setAttribute(key, value.toString());
+			if (value) $script.setAttribute(key, value?.toString());
 		}
 
 		document.body.append($script);
@@ -207,6 +209,7 @@ export function ExternalScript({
 		referrerPolicy,
 		src,
 		type,
+		rest,
 	]);
 
 	if (startsHydrated.current && isHydrated) return null;
@@ -236,6 +239,14 @@ export function ExternalScript({
 				crossOrigin={crossOrigin}
 				integrity={integrity}
 				referrerPolicy={referrerPolicy}
+				{
+					...Object.fromEntries(
+						Object.entries(rest).map(([key, value]) => [
+							key,
+							value?.toString(),
+						]),
+					)
+				}
 			/>
 		</>
 	);
